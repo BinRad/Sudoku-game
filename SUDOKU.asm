@@ -1,3 +1,4 @@
+
 code segment 
 assume CS:code 
 	org 100h				;leaves room for stuff
@@ -50,16 +51,10 @@ skipnormal:
 		add di, 2				;incrememnts di
 		LOOP h2	
 		ret
-		
-;allows user to put number into board (called at 197)
+;allows user to put number into board
 inputnumber:
-	push ax
-	push si
-	push dx
 	mov bx, es:[di]
-	idiv bl
-	;mov si, offset 
-	cmp bl, 32
+	sub bl, 32
 	jne illegalplacement
 	mov bl, al
 	mov bh, 8eh
@@ -79,12 +74,11 @@ clear:
 	loop clear
 	ret
 	
-; REAL START ========================================================================
 realstart:
-	int 10h					;video interrupt
+	int 10h
 	mov ax,0B800h			;moves vid into the accu   
-	mov es, ax  			;moves video mem to es so we can icnrement through it 
-	mov ah, 3fh;71h			;sets color of output
+	mov es, ax  
+	mov ah, 3fh;71h				;sets color of output
 	
 ;draw welcome screen
 	mov si, offset welcome
@@ -101,16 +95,16 @@ writewelc:
 	sub ax, ax
 	call clearscreen
 
-;draw grid ==========================================================================
+	
 ; draw the top of the grid
 	mov ah, 4fh				;sets color of output	
-	mov si, offset tline	;points si to tline in mem
-	mov cx, 35				;this sets the amount of times the loop goes for 
+	mov si, offset tline
+	mov cx, 35
 	mov di, 0				;clears di for use
 toprow: 
 	mov al, [si]			;put incrememnted array in to al
 	mov es:[di], ax			;puts ax into video memory to be displ on screen
-	add si, 1				;increments si to the next element in the array
+	add si, 1
 	add di, 2				;incrememnts di
 	LOOP toprow				;where to loop 
 	sub di, 20
@@ -124,7 +118,7 @@ middle:
 	pop cx					;bring back cx
 	add dl, 1
 	loop middle
-;draw the bottom of the grid 
+;draw the bottom of the grid
 	mov cx, 25
 	mov si, offset mline1
 	add di, 30
@@ -145,16 +139,16 @@ lastbottom: 				;draws the actual bttom of the boxes
 	add di, 2				;incrememnts di
 	loop lastbottom
 		
-;load in board ==============================================================================
+;load in board
 	mov cx, 144 			;it will loop for 144 spots in the board
 	mov di, 82				;put where t writes back to the beginning (which si the 2nd line)
 	mov si, offset board2	;where our string of unsolved board is
 	mov bx, 126				;the end of the line so that we know when t start putting #s on new line
 load:
-	mov al, [si]			;increment through the board array and put each value into al
-	cmp al, "0"				;if that value is 0 leave blank
+	mov al, [si]
+	cmp al, "0"
 	jne actualnum
-	mov al, 32				;if 0 put in the " "space char
+	mov al, 32
 actualnum:
 	mov es:[di], ax			;should be beginning of the loop
 	cmp di, bx
@@ -166,7 +160,7 @@ skip:
 	add di, 4				;incrementby 4 so that dont draw on box borders
 	loop load
 	
-; GET KEY STARTS HERE ====================================================================
+; GET KEY STARTS HERE
 	mov di, 82				;moves cursor to first position in the board
 	sub bx, bx				;BX will hold the LOCATION of our cursor
 	mov dx, 128				;end of line location for cursor to know when to wrap cursor
@@ -177,14 +171,14 @@ getkey:
 	mov al, [si]			;put incrememnted array in to al
 	mov es:[di], bx			;puts bx into video memory to be displ on screen
 	
-	;actual get key. ip waits here
+	;actual get key
 	mov ax, 01h				;so int 16h can get key
-	int 16h					;get key press
+	int 16h					; get key press
 
 	;restores color, had to go here so color doesnt get restored instantly
 	mov bx, es:[di]			;gets current value in that spots (where cursor was)
 	mov bh, 4fh				;put styling back for that spot
-	mov es:[di], bx			;puts spot back to normal color
+	mov es:[di], bx			;pyts spot back to normal color
 	
 	;find out which key was pressed
 	cmp ah, 75				; compare with 37 left
@@ -195,12 +189,11 @@ getkey:
 	je right				; 39 right arrow
 	cmp ah, 80				; find if down arrow
 	je down					; 40 is down arrow
-	cmp al, 27				; find if esc
-	je exit					; is esc, then exit
+	cmp al, 27				; find if down arrow
+	je exit					; 40 is down arrow
 	
 ;if none of the directional keys were pressed then they are trying to input a number
-	jmp inputnumber			; this will allow you to edit filds with a # in them'
-	
+	jmp inputnumber
 left:
 	sub di, 4				;go left
 		;endline stuff had to go here to not mess with restore color
